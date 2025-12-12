@@ -25,6 +25,8 @@ interface PlayerState extends PlayerPosition {
     isVideoOn: boolean;
     isAudioOn: boolean;
     isDancing: boolean;
+    avatarConfig?: any;
+    avatarUrl?: string; // or string | null. Frontend sends null to clear.
 }
 
 @Injectable()
@@ -226,6 +228,37 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
                 playerId: client.id,
                 isDancing,
             });
+        }
+    }
+
+    @SubscribeMessage('player:avatar-update')
+    handleAvatarUpdate(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { spaceId: string; config?: any; avatarUrl?: string | null },
+    ) {
+        const { spaceId, config, avatarUrl } = data;
+        const players = this.spacePlayers.get(spaceId);
+
+        if (players && players.has(client.id)) {
+            const player = players.get(client.id)!;
+
+            const updates: any = {};
+            if (config) {
+                player.avatarConfig = config;
+                updates.config = config;
+            }
+            if (avatarUrl !== undefined) {
+                // Store string or undefined (if null)
+                player.avatarUrl = avatarUrl === null ? undefined : avatarUrl;
+                updates.avatarUrl = avatarUrl;
+            }
+
+            // Broadcast to others in the space
+            client.to(spaceId).emit('player:avatar-update', {
+                playerId: client.id,
+                ...updates
+            });
+            console.log(`🎨 Avatar updated for ${player.userName}`);
         }
     }
 
