@@ -14,6 +14,7 @@ export class UserService {
                 email: true,
                 displayName: true,
                 avatarUrl: true,
+                avatarConfig: true, // Added
                 role: true,
                 createdAt: true,
             },
@@ -35,6 +36,7 @@ export class UserService {
                 email: true,
                 displayName: true,
                 avatarUrl: true,
+                avatarConfig: true, // Added
                 role: true,
                 createdAt: true,
             },

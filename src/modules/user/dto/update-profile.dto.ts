@@ -7,6 +7,9 @@ export class UpdateProfileDto {
     displayName?: string;
 
     @IsOptional()
-    @IsUrl()
+    @IsString()
     avatarUrl?: string;
+
+    @IsOptional()
+    avatarConfig?: any;
 }
