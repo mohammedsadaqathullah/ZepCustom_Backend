@@ -27,6 +27,7 @@ interface PlayerState extends PlayerPosition {
     isDancing: boolean;
     avatarConfig?: any;
     avatarUrl?: string; // or string | null. Frontend sends null to clear.
+    roomId?: string | null;
 }
 
 @Injectable()
@@ -103,6 +104,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
             isVideoOn: false,
             isAudioOn: false,
             isDancing: false,
+            roomId: null // Initialize outside room
         };
 
         players.set(client.id, playerState);
@@ -126,9 +128,9 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     @SubscribeMessage('player:move')
     handlePlayerMove(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { spaceId: string; x: number; y: number; direction: string; isWalking: boolean },
+        @MessageBody() data: { spaceId: string; x: number; y: number; direction: string; isWalking: boolean; roomId?: string | null },
     ) {
-        const { spaceId, x, y, direction, isWalking } = data;
+        const { spaceId, x, y, direction, isWalking, roomId } = data;
         const players = this.spacePlayers.get(spaceId);
 
         if (players && players.has(client.id)) {
@@ -137,6 +139,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
             player.y = y;
             player.direction = direction;
             player.isWalking = isWalking;
+            player.roomId = roomId || null; // Update roomId
 
             // Broadcast to others in the space (include userId for proper filtering)
             client.to(spaceId).emit('player:moved', {
@@ -147,6 +150,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
                 y,
                 direction,
                 isWalking,
+                roomId: player.roomId // Broadcast roomId
             });
         }
     }
