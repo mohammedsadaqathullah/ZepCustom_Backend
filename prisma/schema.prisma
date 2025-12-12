@@ -1,0 +1,192 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  password      String // Changed from passwordHash String?
+  displayName   String
+  avatarUrl     String?
+  role          UserRole      @default(USER)
+  
+  // Avatar customization
+  avatarConfig  Json?         // { face, skin, hair, clothing, accessories }
+  
+  // Online status
+  isOnline      Boolean       @default(false)
+  currentSpaceId String?
+  lastSeen      DateTime?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  sessions      Session[]
+  messages      Message[]
+  ownedSpaces   Space[]       @relation("SpaceOwner")
+  assets        Asset[]
+  memberships   SpaceMember[] // Changed from spaces SpaceMember[]
+  attendance    Attendance[]  // Added
+  
+  @@index([email])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  
+  @@index([userId])
+  @@index([refreshToken])
+}
+
+model Space {
+  id          String          @id @default(uuid())
+  name        String
+  slug        String          @unique
+  description String?
+  visibility  SpaceVisibility @default(PUBLIC)
+  ownerId     String
+  owner       User            @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  maxCapacity Int             @default(50)
+  mapJson     Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  assets      Asset[]
+  members     SpaceMember[]
+  messages    Message[]
+  events      SpaceEvent[]
+  attendance  Attendance[]
+  
+  @@index([slug])
+  @@index([ownerId])
+  @@index([visibility])
+}
+
+enum SpaceVisibility {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+}
+
+model SpaceMember {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spaceId   String
+  space     Space     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  role      SpaceRole @default(MEMBER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@unique([userId, spaceId])
+  @@index([spaceId])
+  @@index([userId])
+}
+
+enum SpaceRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+  GUEST
+}
+
+model Message {
+  id        String      @id @default(uuid())
+  spaceId   String?
+  space     Space?      @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toUserId  String?     // For private messages
+  content   String      @db.Text
+  type      MessageType @default(TEXT)
+  meta      Json?
+  createdAt DateTime    @default(now())
+  
+  @@index([spaceId, createdAt])
+  @@index([userId])
+  @@index([toUserId])
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  PRIVATE
+}
+
+model Asset {
+  id         String   @id @default(uuid())
+  spaceId    String?
+  space      Space?   @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  key        String   // S3 key
+  url        String
+  type       AssetType
+  mimeType   String
+  size       Int      // bytes
+  uploadedBy String
+  uploader   User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  
+  @@index([spaceId])
+  @@index([uploadedBy])
+  @@index([type])
+}
+
+enum AssetType {
+  AVATAR
+  MAP_TILE
+  OBJECT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+model SpaceEvent {
+  id        String   @id @default(uuid())
+  spaceId   String
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  createdAt DateTime @default(now())
+  
+  @@index([spaceId, createdAt])
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  userId       String
+  spaceId      String
+  checkInTime  DateTime  @default(now())
+  checkOutTime DateTime?
+  duration     Int?      // minutes
+  date         DateTime  @db.Date
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, spaceId, date])
+  @@index([userId])
+  @@index([spaceId])
+  @@index([date])
+}

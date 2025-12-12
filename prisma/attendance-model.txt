@@ -1,0 +1,17 @@
+model Attendance {
+  id           String    @id @default(uuid())
+  userId       String
+  spaceId      String
+  checkInTime  DateTime  @default(now())
+  checkOutTime DateTime?
+  duration     Int?      // minutes
+  date         DateTime  @db.Date
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, spaceId, date])
+  @@index([userId])
+  @@index([spaceId])
+  @@index([date])
+}
