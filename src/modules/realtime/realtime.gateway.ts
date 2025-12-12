@@ -115,7 +115,8 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         // Notify others about the new player
         client.to(spaceId).emit('player:joined', playerState);
 
-        console.log(`Player ${userName} joined space ${spaceId}`);
+        console.log(`✅ Player ${userName} joined space ${spaceId}. Total players in space: ${players.size}`);
+        console.log(`📊 Players in space ${spaceId}:`, Array.from(players.values()).map(p => p.userName));
 
         return { success: true, playerId: client.id };
     }
@@ -135,9 +136,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
             player.direction = direction;
             player.isWalking = isWalking;
 
-            // Broadcast to others in the space
+            // Broadcast to others in the space (include userId for proper filtering)
             client.to(spaceId).emit('player:moved', {
                 playerId: client.id,
+                userId: player.userId,
+                userName: player.userName,
                 x,
                 y,
                 direction,
@@ -160,8 +163,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
             client.to(spaceId).emit('player:video-changed', {
                 playerId: client.id,
+                userId: player.userId,
                 isVideoOn,
             });
+            console.log(`📹 Video ${isVideoOn ? 'ON' : 'OFF'} for ${player.userName}`);
         }
     }
 
@@ -179,8 +184,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
             client.to(spaceId).emit('player:audio-changed', {
                 playerId: client.id,
+                userId: player.userId,
                 isAudioOn,
             });
+            console.log(`🎤 Audio ${isAudioOn ? 'ON' : 'OFF'} for ${player.userName}`);
         }
     }
 
