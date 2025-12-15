@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 class UpdateProfileDto {
     displayName;
     avatarUrl;
+    avatarConfig;
 }
 exports.UpdateProfileDto = UpdateProfileDto;
 __decorate([
@@ -24,7 +25,11 @@ __decorate([
 ], UpdateProfileDto.prototype, "displayName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsUrl)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateProfileDto.prototype, "avatarUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdateProfileDto.prototype, "avatarConfig", void 0);
 //# sourceMappingURL=update-profile.dto.js.map

@@ -9,6 +9,7 @@ export declare class UserService {
         displayName: string;
         avatarUrl: string | null;
         role: import(".prisma/client").$Enums.UserRole;
+        avatarConfig: import("@prisma/client/runtime/library").JsonValue;
         createdAt: Date;
     }>;
     updateProfile(userId: string, updateDto: UpdateProfileDto): Promise<{
@@ -17,6 +18,7 @@ export declare class UserService {
         displayName: string;
         avatarUrl: string | null;
         role: import(".prisma/client").$Enums.UserRole;
+        avatarConfig: import("@prisma/client/runtime/library").JsonValue;
         createdAt: Date;
     }>;
     getUserById(userId: string): Promise<{

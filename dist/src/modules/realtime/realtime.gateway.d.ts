@@ -22,6 +22,8 @@ export declare class RealtimeGateway implements OnGatewayConnection, OnGatewayDi
         y: number;
         direction: string;
         isWalking: boolean;
+        roomId?: string | null;
+        vehicleId?: string | null;
     }): void;
     handleVideoToggle(client: Socket, data: {
         spaceId: string;
@@ -38,6 +40,11 @@ export declare class RealtimeGateway implements OnGatewayConnection, OnGatewayDi
     handleDance(client: Socket, data: {
         spaceId: string;
         isDancing: boolean;
+    }): void;
+    handleAvatarUpdate(client: Socket, data: {
+        spaceId: string;
+        config?: any;
+        avatarUrl?: string | null;
     }): void;
     handleCall(client: Socket, data: {
         spaceId: string;

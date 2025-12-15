@@ -10,6 +10,7 @@ export declare class UserController {
         displayName: string;
         avatarUrl: string | null;
         role: import(".prisma/client").$Enums.UserRole;
+        avatarConfig: import("@prisma/client/runtime/library").JsonValue;
         createdAt: Date;
     }>;
     updateMe(user: AuthenticatedUser, updateDto: UpdateProfileDto): Promise<{
@@ -18,6 +19,7 @@ export declare class UserController {
         displayName: string;
         avatarUrl: string | null;
         role: import(".prisma/client").$Enums.UserRole;
+        avatarConfig: import("@prisma/client/runtime/library").JsonValue;
         createdAt: Date;
     }>;
 }

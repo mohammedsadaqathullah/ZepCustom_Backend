@@ -57,17 +57,21 @@ let RealtimeGateway = class RealtimeGateway {
             isVideoOn: false,
             isAudioOn: false,
             isDancing: false,
+            roomId: null
         };
         players.set(client.id, playerState);
         this.userSocketMap.set(userId, client.id);
         const existingPlayers = Array.from(players.values()).filter(p => p.id !== client.id);
         client.emit('players:list', existingPlayers);
         client.to(spaceId).emit('player:joined', playerState);
-        console.log(`Player ${userName} joined space ${spaceId}`);
+        console.log(`✅ Player ${userName} joined space ${spaceId}. Total players in space: ${players.size}`);
+        console.log(`📊 Players in space ${spaceId}:`, Array.from(players.values()).map(p => p.userName));
         return { success: true, playerId: client.id };
     }
     handlePlayerMove(client, data) {
-        const { spaceId, x, y, direction, isWalking } = data;
+        const { spaceId, x, y, direction, isWalking, roomId, vehicleId } = data;
+        if (vehicleId)
+            console.log(`🚗 Backend received vehicleId: ${vehicleId} from ${client.id}`);
         const players = this.spacePlayers.get(spaceId);
         if (players && players.has(client.id)) {
             const player = players.get(client.id);
@@ -75,12 +79,18 @@ let RealtimeGateway = class RealtimeGateway {
             player.y = y;
             player.direction = direction;
             player.isWalking = isWalking;
+            player.roomId = roomId || null;
+            player.vehicleId = vehicleId || null;
             client.to(spaceId).emit('player:moved', {
                 playerId: client.id,
+                userId: player.userId,
+                userName: player.userName,
                 x,
                 y,
                 direction,
                 isWalking,
+                roomId: player.roomId,
+                vehicleId: player.vehicleId
             });
         }
     }
@@ -92,8 +102,10 @@ let RealtimeGateway = class RealtimeGateway {
             player.isVideoOn = isVideoOn;
             client.to(spaceId).emit('player:video-changed', {
                 playerId: client.id,
+                userId: player.userId,
                 isVideoOn,
             });
+            console.log(`📹 Video ${isVideoOn ? 'ON' : 'OFF'} for ${player.userName}`);
         }
     }
     handleAudioToggle(client, data) {
@@ -104,8 +116,10 @@ let RealtimeGateway = class RealtimeGateway {
             player.isAudioOn = isAudioOn;
             client.to(spaceId).emit('player:audio-changed', {
                 playerId: client.id,
+                userId: player.userId,
                 isAudioOn,
             });
+            console.log(`🎤 Audio ${isAudioOn ? 'ON' : 'OFF'} for ${player.userName}`);
         }
     }
     handleWave(client, data) {
@@ -129,6 +143,27 @@ let RealtimeGateway = class RealtimeGateway {
                 playerId: client.id,
                 isDancing,
             });
+        }
+    }
+    handleAvatarUpdate(client, data) {
+        const { spaceId, config, avatarUrl } = data;
+        const players = this.spacePlayers.get(spaceId);
+        if (players && players.has(client.id)) {
+            const player = players.get(client.id);
+            const updates = {};
+            if (config) {
+                player.avatarConfig = config;
+                updates.config = config;
+            }
+            if (avatarUrl !== undefined) {
+                player.avatarUrl = avatarUrl === null ? undefined : avatarUrl;
+                updates.avatarUrl = avatarUrl;
+            }
+            client.to(spaceId).emit('player:avatar-update', {
+                playerId: client.id,
+                ...updates
+            });
+            console.log(`🎨 Avatar updated for ${player.userName}`);
         }
     }
     handleCall(client, data) {
@@ -289,6 +324,14 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], RealtimeGateway.prototype, "handleDance", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('player:avatar-update'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], RealtimeGateway.prototype, "handleAvatarUpdate", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('player:call'),
     __param(0, (0, websockets_1.ConnectedSocket)()),
